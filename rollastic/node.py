@@ -119,7 +119,20 @@ class Node(dict):
         :rtype: str
         '''
         http_addr = self['http_address']
-        m = re.match(r'^inet\[(?P<publish_host>[^/]*)/(?P<publish_ip>[^\]]+)]$', http_addr)
+
+        # Since Elastic can't make up their minds, this parses:
+        # - inet[blah.com/192.168.10.41:9200]
+        # - inet[/192.168.10.41:9200]
+        # - inet[192.168.10.41:9200]
+        # - blah.com/192.168.10.41:9200
+        # - /192.168.10.41:9200
+        # - 192.168.10.41:9200
+        m = re.match(r'^(?:inet)?\[?'
+                     r'(?P<publish_host>[\w\.]*)?/?'
+                     r'(?P<publish_ip>[\d\.]+:\d+)'
+                     r'\]?$',
+                     http_addr)
+
         if not m:
             raise Exception('Could not match http_address: %s' % http_addr)
         for v in m.groups():

@@ -7,7 +7,7 @@ from rollastic.node import Node, NodeSaltOps, HAS_SALT
 from distutils.version import LooseVersion
 import elasticsearch
 import time
-import types
+import six
 
 
 class Cluster(object):
@@ -28,7 +28,7 @@ class Cluster(object):
         :param connect_to_all_masters: Once connected, get a list of all master nodes and connect to all of them.
         :type connect_to_all_masters: bool
         '''
-        if isinstance(hosts, types.StringTypes):
+        if isinstance(hosts, six.string_types):
             hosts = hosts.split(',')
         self.hosts = hosts
 

@@ -85,14 +85,14 @@ class Node(dict):
         '''
         :rtype: bool
         '''
-        return self['settings']['node']['master'] == 'true'
+        return self['settings'].get('node', {}).get('master', 'true') == 'true'
 
     @property
     def is_data(self):
         '''
         :rtype: bool
         '''
-        return self['settings']['node']['data'] == 'true'
+        return self['settings'].get('node', {}).get('data', 'true') == 'true'
 
     @property
     def heap_used_percent(self):
@@ -119,7 +119,20 @@ class Node(dict):
         :rtype: str
         '''
         http_addr = self['http_address']
-        m = re.match(r'^inet\[(?P<publish_host>[^/]*)/(?P<publish_ip>[^\]]+)]$', http_addr)
+
+        # Since Elastic can't make up their minds, this parses:
+        # - inet[blah.com/192.168.10.41:9200]
+        # - inet[/192.168.10.41:9200]
+        # - inet[192.168.10.41:9200]
+        # - blah.com/192.168.10.41:9200
+        # - /192.168.10.41:9200
+        # - 192.168.10.41:9200
+        m = re.match(r'^(?:inet)?\[?'
+                     r'(?:(?P<publish_host>[\w\.]*)/)?'
+                     r'(?P<publish_ip>[\d\.]+:\d+)'
+                     r'\]?$',
+                     http_addr)
+
         if not m:
             raise Exception('Could not match http_address: %s' % http_addr)
         for v in m.groups():

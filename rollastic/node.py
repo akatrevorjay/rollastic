@@ -7,12 +7,6 @@ import time
 import re
 import sys
 
-try:
-    import salt.client
-except ImportError:
-    pass
-HAS_SALT = 'salt.client' in sys.modules
-
 
 class Node(dict):
     '''
@@ -145,20 +139,16 @@ class NodeSaltOps(object):
     Contains Salt operations on a Node.
     '''
 
-    def __init__(self, node, saltcli=None):
+    def __init__(self, node, saltcli):
         '''
         Init
 
         :param node: Node instance
         :type node: Node
         :param saltcli: Salt client instance
-        :type saltcli: salt.client.LocalClient
+        :type saltcli: salt.client.LocalClient|rollastic.salty.SaltLocalClientPepperWrap
         '''
-        assert HAS_SALT
-
         self.node = node
-        if not saltcli:
-            saltcli = salt.client.LocalClient()
         self.s = saltcli
 
     def cmd(self, fun, arg=(), kwarg=None, quiet=False):

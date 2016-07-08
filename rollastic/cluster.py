@@ -2,7 +2,7 @@ from rollastic.log import get_logger
 
 _LOG = get_logger()
 
-from rollastic.node import Node, NodeSaltOps, HAS_SALT
+from rollastic.node import Node, NodeSaltOps
 
 from distutils.version import LooseVersion
 import elasticsearch
@@ -232,7 +232,7 @@ class Cluster(object):
                 if wait_until_green:
                     self.wait_until_green()
 
-    def rolling_restart(self, master=False, data=True, initial_wait_until_green=True,
+    def rolling_restart(self, saltcli, master=False, data=True, initial_wait_until_green=True,
                         heap_used_percent_threshold=85):
         '''
         Rolling restart.
@@ -248,14 +248,10 @@ class Cluster(object):
         '''
         _LOG.info('Performing rolling restart on %s', self)
 
-        # TODO Allow this to be ran without Salt again (states must restart ES on their own, eg swap to upstart)
-        if not HAS_SALT:
-            raise Exception("Salt is currently needed to restart the Elasticsearch service on each node.")
-
         def restart(self, node):
             _LOG.info('Found node with heap above threshold=%d: %s', heap_used_percent_threshold, node)
 
-            nso = NodeSaltOps(node)
+            nso = NodeSaltOps(node, saltcli=saltcli)
 
             ''' Prep '''
 
@@ -284,7 +280,7 @@ class Cluster(object):
             initial_wait_until_green=initial_wait_until_green,
         )
 
-    def rolling_upgrade(self, minimum_version=None, master=False, data=True, initial_wait_until_green=True):
+    def rolling_upgrade(self, saltcli, minimum_version=None, master=False, data=True, initial_wait_until_green=True):
         '''
         Rolling upgrade.
 
@@ -299,16 +295,13 @@ class Cluster(object):
         '''
         _LOG.info('Performing rolling upgrade on %s', self)
 
-        if not HAS_SALT:
-            raise Exception("Salt is required to perform a rolling upgrade.")
-
         def node_filter(self, node):
             if not minimum_version:
                 return True
             return LooseVersion(node.version) < LooseVersion(minimum_version)
 
         def upgrade(self, node):
-            nso = NodeSaltOps(node)
+            nso = NodeSaltOps(node, saltcli=saltcli)
             wait_for_rejoin = False
 
             ''' Prep '''

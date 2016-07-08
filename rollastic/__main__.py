@@ -3,6 +3,7 @@ from rollastic.log import get_logger
 _LOG = get_logger()
 
 from rollastic.cluster import Cluster
+from rollastic.salty import get_saltcli
 import click
 
 
@@ -17,7 +18,17 @@ def cli():
 @click.option('--datas/--no-datas', default=True, help='Restart data nodes [true]')
 @click.option('--kill-at-heap', default=85, help='Heap used percentage threshold to restart that node [85]',
               type=click.INT)
-def restart(master_node, kill_at_heap, masters, datas):
+@click.option('--pepper-url', help='Salt API URL (if unset, assume on Salt master)')
+@click.option('--pepper-username', default='rollastic', help='Salt API username [rollastic]')
+@click.option('--pepper-password', default='', help='Salt API password [unset]')
+@click.option('--pepper-eauth', default='pam', help='Salt API authentication method [pam]')
+@click.option('--pepper-ignore-ssl-errors', default=False, help='Ignore bad Salt API SSL certificate [false]',
+              type=click.BOOL)
+@click.option('--pepper-debug', default=False, help='Debug Salt API communication',
+              type=click.BOOL)
+def restart(master_node, masters, datas, kill_at_heap,
+            pepper_url, pepper_username, pepper_password, pepper_eauth,
+            pepper_ignore_ssl_errors, pepper_debug):
     '''
     Rolling restart of cluster.
 
@@ -45,7 +56,15 @@ def restart(master_node, kill_at_heap, masters, datas):
 
     cluster = Cluster(master_node)
     _LOG.info('Cluster status: %s', cluster.status())
-    cluster.rolling_restart(master=masters, data=datas, heap_used_percent_threshold=kill_at_heap)
+
+    saltcli = get_saltcli(api_url=pepper_url,
+                          username=pepper_username, password=pepper_password,
+                          eauth=pepper_eauth,
+                          ignore_ssl_errors=pepper_ignore_ssl_errors,
+                          debug_http=pepper_debug)
+
+    cluster.rolling_restart(master=masters, data=datas, heap_used_percent_threshold=kill_at_heap,
+                            saltcli=saltcli)
 
 
 @cli.command()
@@ -53,7 +72,17 @@ def restart(master_node, kill_at_heap, masters, datas):
 @click.option('--masters/--no-masters', default=False, help='Restart master nodes as well [false]')
 @click.option('--datas/--no-datas', default=True, help='Restart data nodes [true]')
 @click.option('--minimum-version', default='1.7.1', help='Minimum version to upgrade to [1.7.1]')
-def upgrade(master_node, masters, datas, minimum_version):
+@click.option('--pepper-url', help='Salt API URL (if unset, assume on Salt master)')
+@click.option('--pepper-username', default='rollastic', help='Salt API username [rollastic]')
+@click.option('--pepper-password', default='', help='Salt API password [unset]')
+@click.option('--pepper-eauth', default='pam', help='Salt API authentication method [pam]')
+@click.option('--pepper-ignore-ssl-errors', default=False, help='Ignore bad Salt API SSL certificate [false]',
+              type=click.BOOL)
+@click.option('--pepper-debug', default=False, help='Debug Salt API communication',
+              type=click.BOOL)
+def upgrade(master_node, masters, datas, minimum_version,
+            pepper_url, pepper_username, pepper_password, pepper_eauth,
+            pepper_ignore_ssl_errors, pepper_debug):
     '''
     Rolling upgrade of cluster.
 
@@ -84,7 +113,15 @@ def upgrade(master_node, masters, datas, minimum_version):
 
     cluster = Cluster(master_node)
     _LOG.info('Cluster status: %s', cluster.status())
-    cluster.rolling_upgrade(master=masters, data=datas, minimum_version=minimum_version)
+
+    saltcli = get_saltcli(api_url=pepper_url,
+                          username=pepper_username, password=pepper_password,
+                          eauth=pepper_eauth,
+                          ignore_ssl_errors=pepper_ignore_ssl_errors,
+                          debug_http=pepper_debug)
+
+    cluster.rolling_upgrade(master=masters, data=datas, minimum_version=minimum_version,
+                            saltcli=saltcli)
 
 
 if __name__ == '__main__':

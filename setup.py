@@ -24,13 +24,10 @@ conf = dict(
     install_requires=[
         'elasticsearch',
         'click',
-        'salt',
+        'salt-pepper',
         'six',
     ],
     extras_require={
-        # 'salt': [
-        #    'salt',
-        # ],
     },
 )
 

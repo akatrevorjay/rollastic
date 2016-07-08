@@ -15,8 +15,12 @@ def cli():
 @click.argument('master_node', nargs=1)
 @click.option('--masters/--no-masters', default=False, help='Restart master nodes as well [false]')
 @click.option('--datas/--no-datas', default=True, help='Restart data nodes [true]')
-@click.option('--kill-at-heap', default=85, help='Heap used percentage threshold to restart that node [85]',
-              type=click.INT)
+@click.option(
+    '--kill-at-heap',
+    default=85,
+    help='Heap used percentage threshold to restart that node [85]',
+    type=click.INT
+)
 def restart(master_node, kill_at_heap, masters, datas):
     '''
     Rolling restart of cluster.

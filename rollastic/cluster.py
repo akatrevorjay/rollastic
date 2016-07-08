@@ -32,15 +32,11 @@ class Cluster(object):
             hosts = hosts.split(',')
         self.hosts = hosts
 
-        es_opts = dict(
-            timeout=timeout,
-            retry_on_timeout=True,
-        )
+        es_opts = dict(timeout=timeout,
+                       retry_on_timeout=True,)
         if sniff:
-            es_opts.update(dict(
-                sniff_on_start=True,
-                sniff_on_connection_fail=True,
-            ))
+            es_opts.update(dict(sniff_on_start=True,
+                                sniff_on_connection_fail=True,))
 
         self.es = elasticsearch.Elasticsearch(self.hosts, **es_opts)
 
@@ -70,17 +66,21 @@ class Cluster(object):
 
     def disable_allocation(self):
         _LOG.info('Disabling allocation')
-        return self.put_settings({
-            'cluster.routing.allocation.disable_allocation': 'true',
-            # 'cluster.routing.allocation.node': 'none',
-        })
+        return self.put_settings(
+            {
+                'cluster.routing.allocation.disable_allocation': 'true',
+                # 'cluster.routing.allocation.node': 'none',
+            }
+        )
 
     def enable_allocation(self):
         _LOG.info('Enabling allocation')
-        return self.put_settings({
-            'cluster.routing.allocation.disable_allocation': 'false',
-            # 'cluster.routing.allocation.node': 'all',
-        })
+        return self.put_settings(
+            {
+                'cluster.routing.allocation.disable_allocation': 'false',
+                # 'cluster.routing.allocation.node': 'all',
+            }
+        )
 
     def status(self):
         '''
@@ -145,7 +145,10 @@ class Cluster(object):
         :return: Node on Success
         :rtype: Node
         '''
-        _LOG.info('Waiting until node %s joins with a freshness_window of %d secs and uptime_less_than=%d', name, freshness_window, uptime_less_than)
+        _LOG.info(
+            'Waiting until node %s joins with a freshness_window of %d secs and uptime_less_than=%d', name,
+            freshness_window, uptime_less_than
+        )
         while True:
             for n in self.iter_nodes():
                 if n.name == name:
@@ -157,15 +160,19 @@ class Cluster(object):
                         _LOG.warn('Found node %s but uptime=%s?', n, uptime)
                         continue
                     if freshness_window and uptime > freshness_window:
-                        _LOG.debug('Found node %s but uptime=%s was under freshness_window=%ds',
-                                   name, uptime, freshness_window)
+                        _LOG.debug(
+                            'Found node %s but uptime=%s was under freshness_window=%ds', name, uptime, freshness_window
+                        )
                         continue
                     if uptime_less_than and uptime > uptime_less_than:
-                        _LOG.debug('Found node %s but uptime=%s was above uptime_less_than=%s',
-                                   name, uptime, uptime_less_than)
+                        _LOG.debug(
+                            'Found node %s but uptime=%s was above uptime_less_than=%s', name, uptime, uptime_less_than
+                        )
                         continue
-                    _LOG.info('Found node %s with uptime=%s was within freshness_window=%ds and uptime_less_than=%s',
-                              name, uptime, freshness_window, uptime_less_than)
+                    _LOG.info(
+                        'Found node %s with uptime=%s was within freshness_window=%ds and uptime_less_than=%s', name,
+                        uptime, freshness_window, uptime_less_than
+                    )
                     return n
             time.sleep(check_every)
 
@@ -178,9 +185,16 @@ class Cluster(object):
         '''
         return Node.iter_nodes(self)
 
-    def rolling_helper(self, callback, node_filter=lambda self, node: True,
-                       master=False, data=True,
-                       initial_wait_until_green=True, wait_until_green=True, disable_allocation=True):
+    def rolling_helper(
+        self,
+        callback,
+        node_filter=lambda self, node: True,
+        master=False,
+        data=True,
+        initial_wait_until_green=True,
+        wait_until_green=True,
+        disable_allocation=True
+    ):
         '''
         Generic helper to perform rolling actions.
 
@@ -232,8 +246,7 @@ class Cluster(object):
                 if wait_until_green:
                     self.wait_until_green()
 
-    def rolling_restart(self, master=False, data=True, initial_wait_until_green=True,
-                        heap_used_percent_threshold=85):
+    def rolling_restart(self, master=False, data=True, initial_wait_until_green=True, heap_used_percent_threshold=85):
         '''
         Rolling restart.
 
@@ -256,22 +269,18 @@ class Cluster(object):
             _LOG.info('Found node with heap above threshold=%d: %s', heap_used_percent_threshold, node)
 
             nso = NodeSaltOps(node)
-
             ''' Prep '''
 
             _LOG.info('Verifying I can ping node=%s through Salt', node)
             assert nso.ping()
-
             ''' Shutdown '''
 
             assert nso.ensure_elasticsearch_is_dead()
-
             ''' Start '''
 
             assert nso.service_start('elasticsearch')
             time.sleep(15)
             assert nso.wait_for_service_status('elasticsearch', True)
-
             ''' Wait until node joins '''
 
             self.wait_until_node_joins(node.name, uptime_less_than=node.uptime.total_seconds())
@@ -279,8 +288,10 @@ class Cluster(object):
         node_filter = lambda self, node: node.heap_used_percent > heap_used_percent_threshold
 
         return self.rolling_helper(
-            restart, node_filter,
-            master=master, data=data,
+            restart,
+            node_filter,
+            master=master,
+            data=data,
             initial_wait_until_green=initial_wait_until_green,
         )
 
@@ -310,12 +321,10 @@ class Cluster(object):
         def upgrade(self, node):
             nso = NodeSaltOps(node)
             wait_for_rejoin = False
-
             ''' Prep '''
 
             _LOG.info('Verifying I can ping node=%s through Salt', node)
             assert nso.ping()
-
             ''' Highstate '''
 
             _LOG.info('Blazing it up (lighting a highstate) on node=%s', node)
@@ -328,7 +337,6 @@ class Cluster(object):
                 _LOG.info('Salt elasticsearch service changes: %s', svc_changes)
             else:
                 _LOG.info('Salt reported that no changes were performed on the elasticsearch service.')
-
             ''' HACK Work around broken pkg.latest in Salt '''
 
             upgradable = nso.cmd('pkg.available_version', ['elasticsearch'])
@@ -344,7 +352,6 @@ class Cluster(object):
                 ret = nso.cmd('pkg.install', ['elasticsearch'])
                 if ret.get('elasticsearch'):
                     wait_for_rejoin = True
-
             ''' Wait for node to rejoin (if applicable) '''
 
             if wait_for_rejoin:
@@ -357,7 +364,9 @@ class Cluster(object):
                 self.wait_until_node_joins(node.name, uptime_less_than=node.uptime.total_seconds())
 
         return self.rolling_helper(
-            upgrade, node_filter,
-            master=master, data=data,
+            upgrade,
+            node_filter,
+            master=master,
+            data=data,
             initial_wait_until_green=initial_wait_until_green,
         )

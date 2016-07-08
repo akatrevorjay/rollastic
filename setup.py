@@ -1,7 +1,7 @@
 from setuptools import setup
 
 __version__ = '0.0.1'  # This is ovewritten by the execfile below
-exec (open('rollastic/_version.py').read())
+exec(open('rollastic/_version.py').read())
 
 conf = dict(
     name='rollastic',
@@ -12,7 +12,6 @@ conf = dict(
     license='GPL',
     keywords=['elasticsearch', 'elastic', 'cluster', 'salt', 'saltstack', 'rolling', 'upgrade', 'restart'],
     classifiers=[],
-
     version=__version__,
     packages=['rollastic'],
     entry_points={
@@ -20,7 +19,6 @@ conf = dict(
             'rollastic = rollastic.__main__:cli',
         ]
     },
-
     install_requires=[
         'elasticsearch',
         'click',
@@ -32,8 +30,6 @@ conf = dict(
     },
 )
 
-conf.update(dict(
-    download_url='{}/tarball/{}'.format(conf['url'], conf['version']),
-))
+conf.update(dict(download_url='{}/tarball/{}'.format(conf['url'], conf['version']),))
 
 setup(**conf)

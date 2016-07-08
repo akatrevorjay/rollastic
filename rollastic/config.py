@@ -3,7 +3,8 @@ LOGGING = {
     'disable_existing_loggers': True,
     'formatters': {
         'standard': {
-            'format': '%(asctime)s| %(name)s/%(processName)s[%(process)d]-%(threadName)s: %(message)s @%(funcName)s:%(lineno)d #%(levelname)s',
+            'format':
+            '%(asctime)s| %(name)s/%(processName)s[%(process)d]-%(threadName)s: %(message)s @%(funcName)s:%(lineno)d #%(levelname)s',
         }
     },
     'handlers': {
